@@ -2,290 +2,230 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>BTC 交易看板 (Pro版)</title>
+    <title>BTC 仪表盘 (终极版)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 页面基础样式 */
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        
-        /* 卡片通用样式 */
+        body { background-color: #0b1121; color: #cbd5e1; font-family: system-ui, -apple-system, sans-serif; }
         .card { 
-            background-color: #1e293b; 
+            background: #1e293b; 
             border: 1px solid #334155; 
             border-radius: 16px; 
             padding: 24px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+            text-align: center;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            align-items: center;
+            min-height: 180px;
         }
-
-        /* 文字样式 */
-        .label { color: #94a3b8; font-size: 0.875rem; margin-bottom: 8px; font-weight: 500; }
-        .value { font-size: 2.5rem; font-weight: 800; line-height: 1; }
-        .sub-text { font-size: 0.75rem; color: #64748b; margin-top: 8px; font-family: monospace; }
-        
-        /* 状态胶囊 */
-        .badge {
-            margin-top: 12px;
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 0.875rem;
+        .value-big { font-size: 3rem; font-weight: 800; line-height: 1.1; color: #f8fafc; }
+        .label { font-size: 0.9rem; color: #94a3b8; margin-bottom: 12px; font-weight: 500; }
+        .badge { 
+            margin-top: 10px; 
+            padding: 6px 16px; 
+            border-radius: 20px; 
+            font-size: 0.9rem; 
             font-weight: 700;
             display: inline-block;
         }
-
-        /* 颜色定义 */
+        /* 颜色配置 */
         .text-green { color: #4ade80; }
-        .bg-green { background-color: rgba(74, 222, 128, 0.15); color: #4ade80; }
-        
+        .bg-green { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
         .text-red { color: #f87171; }
-        .bg-red { background-color: rgba(248, 113, 113, 0.15); color: #f87171; }
-        
-        .text-yellow { color: #facc15; }
-        .bg-yellow { background-color: rgba(250, 204, 21, 0.15); color: #facc15; }
-
+        .bg-red { background: rgba(248, 113, 113, 0.2); color: #f87171; }
         .text-blue { color: #60a5fa; }
-        .bg-blue { background-color: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+        .bg-blue { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+        .text-yellow { color: #facc15; }
+        .bg-yellow { background: rgba(250, 204, 21, 0.2); color: #facc15; }
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
+<body class="p-4 md:p-8">
 
-    <div class="w-full max-w-5xl">
-        <div class="text-center mb-10">
-            <h1 class="text-3xl font-black tracking-widest text-white uppercase">Market Monitor</h1>
-            <p class="text-xs text-gray-500 mt-2">Data Refresh: 60s | Status: <span id="status-dot" class="text-green-500">● Live</span></p>
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-end mb-8 border-b border-gray-800 pb-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-wider">BTC DASHBOARD</h1>
+                <p class="text-xs text-gray-500 mt-1">Version: Ultimate (无图版)</p>
+            </div>
+            <div class="text-right">
+                <div id="status-dot" class="text-xs text-green-500 font-mono">● System Online</div>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             
-            <div class="card">
-                <div class="label">BTC 实时价格</div>
-                <div id="btc-price" class="value text-white">Loading...</div>
-                <div class="sub-text">Binance Direct Feed</div>
-            </div>
-
             <div class="card relative overflow-hidden">
                 <div class="label">恐惧 & 贪婪指数</div>
-                <div id="fng-val" class="value">--</div>
-                <div id="fng-badge" class="badge bg-gray-700 text-gray-300">获取中...</div>
-                <div class="absolute bottom-0 left-0 h-1 bg-gray-700 w-full">
+                <div id="fng-val" class="value-big">--</div>
+                <div id="fng-badge" class="badge bg-gray-700 text-gray-400">加载中...</div>
+                <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-700">
                     <div id="fng-bar" class="h-full transition-all duration-1000" style="width: 0%"></div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="label">距离下一次减半</div>
-                <div id="halving" class="value text-blue">--</div>
-                <div class="sub-text">预计 2028-04</div>
+            <div class="card border-blue-900/50 relative">
+                <div class="absolute top-3 right-3 text-xs text-gray-600 font-mono">囤币指标</div>
+                <div class="label">ahr999 Index</div>
+                <div id="ahr-val" class="value-big">--</div>
+                <div id="ahr-badge" class="badge bg-gray-700 text-gray-400">正在计算...</div>
             </div>
-        </div>
 
-        <div class="mb-6">
-            <div class="card w-full py-10 border-blue-500/30 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50"></div>
-                
-                <div class="label text-lg mb-2">ahr999 囤币指标</div>
-                <div id="ahr-val" class="text-6xl font-black text-white mb-2 tracking-tighter">--</div>
-                <div id="ahr-badge" class="text-xl font-bold px-6 py-2 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
-                    正在计算链上数据...
-                </div>
-                
-                <div class="grid grid-cols-3 gap-2 mt-8 text-center text-xs text-gray-500 max-w-md w-full">
-                    <div class="p-2 rounded bg-green/5 border border-green/10">
-                        <span class="block text-green font-bold text-lg">< 0.45</span>
-                        <span>抄底区间</span>
-                    </div>
-                    <div class="p-2 rounded bg-blue/5 border border-blue/10">
-                        <span class="block text-blue font-bold text-lg">0.45 - 1.2</span>
-                        <span>定投区间</span>
-                    </div>
-                    <div class="p-2 rounded bg-red/5 border border-red/10">
-                        <span class="block text-red font-bold text-lg">> 1.2</span>
-                        <span>等待观望</span>
-                    </div>
-                </div>
+            <div class="card">
+                <div class="label">BTC Price</div>
+                <div id="btc-price" class="value-big text-yellow-400">--</div>
+                <div id="price-change" class="text-sm font-bold mt-2">--%</div>
             </div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="card py-6">
-                <div class="label">MA 120 (牛熊线)</div>
-                <div id="ma120" class="text-xl font-bold text-gray-300">--</div>
+            <div class="bg-gray-800 rounded-xl p-4 text-center border border-gray-700">
+                <div class="text-xs text-gray-500 mb-1">MA 120</div>
+                <div id="ma120" class="text-lg font-bold text-white">--</div>
             </div>
-            <div class="card py-6">
-                <div class="label">MA 200 (长期成本)</div>
-                <div id="ma200" class="text-xl font-bold text-gray-300">--</div>
+            <div class="bg-gray-800 rounded-xl p-4 text-center border border-gray-700">
+                <div class="text-xs text-gray-500 mb-1">MA 200</div>
+                <div id="ma200" class="text-lg font-bold text-white">--</div>
             </div>
-            <div class="card py-6">
-                <div class="label">RSI (14)</div>
-                <div id="rsi" class="text-xl font-bold">--</div>
+            <div class="bg-gray-800 rounded-xl p-4 text-center border border-gray-700">
+                <div class="text-xs text-gray-500 mb-1">RSI (14)</div>
+                <div id="rsi" class="text-lg font-bold text-white">--</div>
             </div>
-            <div class="card py-6">
-                <div class="label">今日涨跌幅</div>
-                <div id="price-change" class="text-xl font-bold">--</div>
+            <div class="bg-gray-800 rounded-xl p-4 text-center border border-gray-700">
+                <div class="text-xs text-gray-500 mb-1">减半倒计时</div>
+                <div id="halving" class="text-lg font-bold text-blue-400">--</div>
             </div>
         </div>
 
-        <div class="text-center mt-12 text-gray-600 text-xs">
-            Private Dashboard | Updates Automatically
+        <div class="text-center mt-10 text-gray-600 text-xs">
+            数据每 60 秒自动刷新 | 双通道线路保障
         </div>
     </div>
 
     <script>
-        // === 1. 获取 恐惧贪婪指数 (双通道保障) ===
+        // === 1. 获取恐惧贪婪 (双重保险逻辑) ===
         async function fetchFnG() {
-            const fngValEl = document.getElementById('fng-val');
-            const fngBadgeEl = document.getElementById('fng-badge');
-            const fngBarEl = document.getElementById('fng-bar');
+            const valEl = document.getElementById('fng-val');
+            const badgeEl = document.getElementById('fng-badge');
+            const barEl = document.getElementById('fng-bar');
 
             try {
-                // 优先通道：直连官方API
-                let response = await fetch('https://api.alternative.me/fng/?limit=1');
+                // 尝试直连
+                let res = await fetch('https://api.alternative.me/fng/?limit=1');
                 
-                // 备用通道：如果直连失败，走公共代理
-                if (!response.ok) {
-                    console.log("直连失败，切换代理...");
-                    response = await fetch('https://api.allorigins.win/raw?url=https://api.alternative.me/fng/');
+                // 如果直连失败（比如被墙），切换到代理
+                if (!res.ok) {
+                    console.log('直连失败，切换代理...');
+                    res = await fetch('https://api.allorigins.win/raw?url=https://api.alternative.me/fng/');
                 }
 
-                const data = await response.json();
+                const data = await res.json();
                 const val = parseInt(data.data[0].value);
-                const statusText = data.data[0].value_classification;
+                const status = data.data[0].value_classification;
 
-                // 更新数值
-                fngValEl.innerText = val;
+                valEl.innerText = val;
                 
-                // 更新样式和文字
-                let colorClass = "";
-                let bgClass = "";
-                
-                if (val <= 25) { // 极度恐惧
-                    colorClass = "text-green"; // 机会来了用绿色
-                    bgClass = "bg-green";
-                    fngBarEl.style.backgroundColor = "#4ade80";
+                // 颜色逻辑
+                let color = "text-gray-400";
+                let bg = "bg-gray-700";
+                let barColor = "#9ca3af";
+
+                if (val <= 25) { // 极度恐惧 -> 绿色 (抄底机会)
+                    color = "text-green"; bg = "bg-green"; barColor = "#4ade80";
                 } else if (val <= 45) { // 恐惧
-                    colorClass = "text-blue";
-                    bgClass = "bg-blue";
-                    fngBarEl.style.backgroundColor = "#60a5fa";
+                    color = "text-blue"; bg = "bg-blue"; barColor = "#60a5fa";
                 } else if (val <= 75) { // 贪婪
-                    colorClass = "text-yellow";
-                    bgClass = "bg-yellow";
-                    fngBarEl.style.backgroundColor = "#facc15";
-                } else { // 极度贪婪
-                    colorClass = "text-red"; // 风险来了用红色
-                    bgClass = "bg-red";
-                    fngBarEl.style.backgroundColor = "#f87171";
+                    color = "text-yellow"; bg = "bg-yellow"; barColor = "#facc15";
+                } else { // 极度贪婪 -> 红色 (风险)
+                    color = "text-red"; bg = "bg-red"; barColor = "#f87171";
                 }
 
-                fngValEl.className = `value ${colorClass}`;
-                fngBadgeEl.className = `badge ${bgClass}`;
-                fngBadgeEl.innerText = statusText; // 例如 "Extreme Fear"
-                fngBarEl.style.width = val + "%";
+                valEl.className = `value-big ${color}`;
+                badgeEl.className = `badge ${bg}`;
+                badgeEl.innerText = status;
+                barEl.style.width = val + "%";
+                barEl.style.backgroundColor = barColor;
 
             } catch (e) {
                 console.error(e);
-                fngValEl.innerText = "Err";
-                fngBadgeEl.innerText = "网络超时";
+                valEl.innerText = "Err";
+                badgeEl.innerText = "网络错误";
             }
         }
 
-        // === 2. 获取 BTC 价格与计算核心指标 ===
+        // === 2. 市场数据 (直连币安) ===
         async function fetchMarket() {
             try {
-                // 直连币安 API
                 const res = await fetch("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=200");
                 const data = await res.json();
-                
                 const prices = data.map(k => parseFloat(k[4]));
-                const currentPrice = prices[prices.length - 1];
-                const openPrice = parseFloat(data[data.length - 1][1]); // 今日开盘价
+                const current = prices[prices.length - 1];
+                const open = parseFloat(data[data.length - 1][1]);
 
-                // 2.1 更新价格
-                document.getElementById('btc-price').innerText = `$${Math.floor(currentPrice).toLocaleString()}`;
-                
-                // 2.2 更新涨跌幅
-                const change = ((currentPrice - openPrice) / openPrice) * 100;
+                // 价格
+                document.getElementById('btc-price').innerText = `$${Math.floor(current).toLocaleString()}`;
+                const change = ((current - open) / open) * 100;
                 const changeEl = document.getElementById('price-change');
-                changeEl.innerText = (change >= 0 ? "+" : "") + change.toFixed(2) + "%";
-                changeEl.className = `text-xl font-bold ${change >= 0 ? "text-green" : "text-red"}`;
+                changeEl.innerText = (change>0?"+":"") + change.toFixed(2) + "%";
+                changeEl.className = `text-sm font-bold mt-2 ${change>=0?"text-green":"text-red"}`;
 
-                // 2.3 计算均线
+                // MA
                 const ma120 = prices.slice(-120).reduce((a,b)=>a+b)/120;
                 const ma200 = prices.reduce((a,b)=>a+b)/200;
                 document.getElementById('ma120').innerText = `$${Math.floor(ma120)}`;
                 document.getElementById('ma200').innerText = `$${Math.floor(ma200)}`;
 
-                // 2.4 计算 RSI
-                let gains = 0, losses = 0;
-                for(let i=prices.length-14; i<prices.length; i++) {
-                    let diff = prices[i] - prices[i-1];
-                    if(diff > 0) gains += diff; else losses += Math.abs(diff);
+                // RSI
+                let gains=0, losses=0;
+                for(let i=prices.length-14; i<prices.length; i++){
+                    let diff = prices[i]-prices[i-1];
+                    if(diff>0) gains+=diff; else losses+=Math.abs(diff);
                 }
-                let rs = (gains/14) / (losses/14); // 简化版 SMA 算法
-                let rsi = 100 - (100 / (1 + rs));
-                
+                let rsi = 100 - (100/(1+(gains/losses)));
                 const rsiEl = document.getElementById('rsi');
                 rsiEl.innerText = rsi.toFixed(1);
-                // RSI < 30 超卖(绿), > 70 超买(红)
-                if(rsi < 30) rsiEl.className = "text-xl font-bold text-green";
-                else if(rsi > 70) rsiEl.className = "text-xl font-bold text-red";
-                else rsiEl.className = "text-xl font-bold text-gray-300";
+                rsiEl.className = `text-lg font-bold ${rsi<30?"text-green":(rsi>70?"text-red":"text-white")}`;
 
-                // 2.5 核心算法：ahr999
+                // ahr999
                 const birth = new Date("2009-01-03").getTime();
                 const now = new Date().getTime();
-                const days = (now - birth) / 86400000;
-                // 拟合币价公式
-                const fitPrice = Math.pow(10, 5.84 * Math.log10(days) - 17.01);
-                
-                const ahr999 = (currentPrice / fitPrice) * (currentPrice / ma200);
+                const days = (now-birth)/86400000;
+                const fit = Math.pow(10, 5.84 * Math.log10(days) - 17.01);
+                const ahr = (current/fit) * (current/ma200);
                 
                 const ahrValEl = document.getElementById('ahr-val');
-                const ahrBadgeEl = document.getElementById('ahr-badge');
+                const ahrBadge = document.getElementById('ahr-badge');
                 
-                ahrValEl.innerText = ahr999.toFixed(3);
+                ahrValEl.innerText = ahr.toFixed(3);
                 
-                if (ahr999 < 0.45) {
-                    ahrValEl.className = "text-6xl font-black text-green tracking-tighter";
-                    ahrBadgeEl.innerText = "🔥 极度低估：抄底 (Buy)";
-                    ahrBadgeEl.className = "text-xl font-bold px-6 py-2 rounded-full bg-green text-green border border-green-500/30";
-                } else if (ahr999 < 1.2) {
-                    ahrValEl.className = "text-6xl font-black text-blue tracking-tighter";
-                    ahrBadgeEl.innerText = "💎 定投区间：积累 (DCA)";
-                    ahrBadgeEl.className = "text-xl font-bold px-6 py-2 rounded-full bg-blue text-blue border border-blue-500/30";
+                if(ahr < 0.45) {
+                    ahrValEl.className = "value-big text-green";
+                    ahrBadge.className = "badge bg-green";
+                    ahrBadge.innerText = "抄底 (Buy)";
+                } else if(ahr < 1.2) {
+                    ahrValEl.className = "value-big text-blue";
+                    ahrBadge.className = "badge bg-blue";
+                    ahrBadge.innerText = "定投 (DCA)";
                 } else {
-                    ahrValEl.className = "text-6xl font-black text-red tracking-tighter";
-                    ahrBadgeEl.innerText = "🚀 此时不买：等待 (Wait)";
-                    ahrBadgeEl.className = "text-xl font-bold px-6 py-2 rounded-full bg-red text-red border border-red-500/30";
+                    ahrValEl.className = "value-big text-red";
+                    ahrBadge.className = "badge bg-red";
+                    ahrBadge.innerText = "观望 (Wait)";
                 }
 
-            } catch (e) {
-                console.error("Market Data Error:", e);
-            }
+            } catch(e) { console.error(e); }
         }
 
         // === 3. 减半倒计时 ===
         function updateHalving() {
-            const nextHalving = new Date("2028-04-15").getTime(); // 预估日期
-            const now = new Date().getTime();
-            const days = Math.floor((nextHalving - now) / 86400000);
-            document.getElementById('halving').innerText = `${days} 天`;
+            const target = new Date("2028-04-15").getTime();
+            const days = Math.floor((target - new Date().getTime())/86400000);
+            document.getElementById('halving').innerText = days + " 天";
         }
 
-        // === 启动引擎 ===
         fetchFnG();
         fetchMarket();
         updateHalving();
-
-        // 设置自动刷新：每 60 秒一次
-        setInterval(() => {
-            fetchFnG();
-            fetchMarket();
-        }, 60000);
-
+        setInterval(() => { fetchFnG(); fetchMarket(); }, 60000);
     </script>
 </body>
 </html>
