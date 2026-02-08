@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>BTC 仪表盘 (多线修复版)</title>
+    <title>BTC Pro Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -11,21 +11,21 @@
             background: #1e293b; 
             border: 1px solid #334155; 
             border-radius: 16px; 
-            padding: 24px; 
+            padding: 20px; 
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 180px;
+            min-height: 160px;
         }
-        .value-big { font-size: 3rem; font-weight: 800; line-height: 1.1; color: #f8fafc; }
-        .label { font-size: 0.9rem; color: #94a3b8; margin-bottom: 12px; font-weight: 500; }
+        .value-big { font-size: 2.5rem; font-weight: 800; line-height: 1.1; color: #f8fafc; }
+        .label { font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; font-weight: 500; }
         .badge { 
-            margin-top: 10px; 
-            padding: 6px 16px; 
+            margin-top: 8px; 
+            padding: 4px 12px; 
             border-radius: 20px; 
-            font-size: 0.9rem; 
+            font-size: 0.8rem; 
             font-weight: 700;
             display: inline-block;
         }
@@ -43,48 +43,51 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-end mb-8 border-b border-gray-800 pb-4">
+        <div class="flex justify-between items-end mb-6 border-b border-gray-800 pb-4">
             <div>
-                <h1 class="text-2xl md:text-3xl font-black text-white tracking-wider">BTC DASHBOARD</h1>
-                <p class="text-xs text-gray-500 mt-1">Status: <span id="source-status" class="text-blue-400">初始化...</span></p>
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-wider">BTC PRO TERMINAL</h1>
+                <p class="text-xs text-gray-500 mt-1">集成 资金费率 & 200周均线</p>
             </div>
             <div class="text-right">
-                <div id="status-dot" class="text-xs text-green-500 font-mono">● System Online</div>
+                <div id="status-dot" class="text-xs text-green-500 font-mono">● Live Data</div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             
             <div class="card relative overflow-hidden">
                 <div class="label">恐惧 & 贪婪指数</div>
                 <div id="fng-val" class="value-big">--</div>
-                <div id="fng-badge" class="badge bg-gray-700 text-gray-400">连接中...</div>
+                <div id="fng-badge" class="badge bg-gray-700 text-gray-400">Loading...</div>
                 <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-700">
                     <div id="fng-bar" class="h-full transition-all duration-1000" style="width: 0%"></div>
                 </div>
             </div>
 
             <div class="card border-blue-900/50 relative">
-                <div class="absolute top-3 right-3 text-xs text-gray-600 font-mono">囤币指标</div>
-                <div class="label">ahr999 Index</div>
+                <div class="label">ahr999 囤币指标</div>
                 <div id="ahr-val" class="value-big">--</div>
-                <div id="ahr-badge" class="badge bg-gray-700 text-gray-400">计算中...</div>
+                <div id="ahr-badge" class="badge bg-gray-700 text-gray-400">Loading...</div>
             </div>
 
-            <div class="card">
+            <div class="card relative">
                 <div class="label">BTC Price</div>
                 <div id="btc-price" class="value-big text-yellow-400">--</div>
-                <div id="price-change" class="text-sm font-bold mt-2">--%</div>
+                <div class="flex gap-4 mt-2">
+                    <span id="price-change" class="text-sm font-bold">--%</span>
+                    <span class="text-gray-600">|</span>
+                    <span id="funding-rate" class="text-sm font-bold text-gray-400">费率: --%</span>
+                </div>
             </div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="bg-gray-800 rounded-xl p-4 text-center border border-gray-700">
-                <div class="text-xs text-gray-500 mb-1">MA 120</div>
-                <div id="ma120" class="text-lg font-bold text-white">--</div>
+                <div class="text-xs text-gray-500 mb-1">200周均线 (铁底)</div>
+                <div id="wma200" class="text-lg font-bold text-blue-300">--</div>
             </div>
             <div class="bg-gray-800 rounded-xl p-4 text-center border border-gray-700">
-                <div class="text-xs text-gray-500 mb-1">MA 200</div>
+                <div class="text-xs text-gray-500 mb-1">200日均线 (牛熊)</div>
                 <div id="ma200" class="text-lg font-bold text-white">--</div>
             </div>
             <div class="bg-gray-800 rounded-xl p-4 text-center border border-gray-700">
@@ -97,93 +100,24 @@
             </div>
         </div>
 
-        <div class="text-center mt-10 text-gray-600 text-xs">
-            数据源: Binance 直连 + 多线路聚合API
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600 bg-gray-900 p-4 rounded-lg">
+            <div>
+                <p class="font-bold text-gray-500 mb-1">新指标说明：</p>
+                <p>• <span class="text-blue-400">200周均线</span>：历史大底参考线，价格接近即是极佳买点。</p>
+                <p>• <span class="text-yellow-400">资金费率</span>：正值过高代表过热(风险)，负值代表空头拥挤(机会)。</p>
+            </div>
+            <div class="text-right flex flex-col justify-end">
+                <p>数据源: Binance API 直连</p>
+                <p id="source-status">Status: Auto</p>
+            </div>
         </div>
     </div>
 
     <script>
         let globalRSI = 50; 
 
-        // === 1. 强力获取恐惧贪婪指数 (3条线路轮询) ===
-        async function fetchFnG() {
-            const statusEl = document.getElementById('source-status');
-            
-            // 定义3条不同的线路（包含直连和不同的代理）
-            const apis = [
-                // 线路1: AllOrigins 代理
-                { url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.alternative.me/fng/?limit=1'), name: '线路A' },
-                // 线路2: CorsProxy 代理
-                { url: 'https://corsproxy.io/?' + encodeURIComponent('https://api.alternative.me/fng/?limit=1'), name: '线路B' },
-                // 线路3: ThingProxy 代理
-                { url: 'https://thingproxy.freeboard.io/fetch/https://api.alternative.me/fng/?limit=1', name: '线路C' }
-            ];
-
-            let success = false;
-
-            for (let api of apis) {
-                try {
-                    console.log("尝试连接: " + api.name);
-                    let res = await fetch(api.url);
-                    if (!res.ok) throw new Error("Load Failed");
-                    let data = await res.json();
-                    
-                    // 验证数据格式是否正确
-                    if (data.data && data.data[0]) {
-                        const val = parseInt(data.data[0].value);
-                        const status = data.data[0].value_classification;
-                        updateFnGUI(val, status, "官方数据 (" + api.name + ")");
-                        success = true;
-                        break; // 成功了就跳出循环
-                    }
-                } catch (e) {
-                    console.warn(api.name + " 失败，切换下一条...");
-                }
-            }
-
-            // 如果3条线路全挂了，才用 RSI 兜底，并明确标注误差
-            if (!success) {
-                let estVal = Math.round(globalRSI);
-                let estStatus = "估算(API不通)";
-                updateFnGUI(estVal, estStatus, "警告:网络全部中断,显示RSI估值");
-                document.getElementById('source-status').className = "text-red-500";
-            } else {
-                document.getElementById('source-status').className = "text-green-500";
-            }
-        }
-
-        function updateFnGUI(val, status, source) {
-            const valEl = document.getElementById('fng-val');
-            const badgeEl = document.getElementById('fng-badge');
-            const barEl = document.getElementById('fng-bar');
-
-            valEl.innerText = val;
-            document.getElementById('source-status').innerText = source;
-            
-            let color = "text-gray-400";
-            let bg = "bg-gray-700";
-            let barColor = "#9ca3af";
-
-            // 0-25 极度恐惧 (绿色抄底)
-            if (val <= 25) { 
-                color = "text-green"; bg = "bg-green"; barColor = "#4ade80";
-            } else if (val <= 45) { // 恐惧
-                color = "text-blue"; bg = "bg-blue"; barColor = "#60a5fa";
-            } else if (val <= 75) { // 贪婪
-                color = "text-yellow"; bg = "bg-yellow"; barColor = "#facc15";
-            } else { // 极度贪婪
-                color = "text-red"; bg = "bg-red"; barColor = "#f87171";
-            }
-
-            valEl.className = `value-big ${color}`;
-            badgeEl.className = `badge ${bg}`;
-            badgeEl.innerText = status;
-            barEl.style.width = val + "%";
-            barEl.style.backgroundColor = barColor;
-        }
-
-        // === 2. 市场数据 (Binance) ===
-        async function fetchMarket() {
+        // === 1. 获取核心K线数据 (日线) ===
+        async function fetchDailyData() {
             try {
                 const res = await fetch("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=200");
                 const data = await res.json();
@@ -191,28 +125,29 @@
                 const current = prices[prices.length - 1];
                 const open = parseFloat(data[data.length - 1][1]);
 
+                // 价格与涨跌
                 document.getElementById('btc-price').innerText = `$${Math.floor(current).toLocaleString()}`;
                 const change = ((current - open) / open) * 100;
                 const changeEl = document.getElementById('price-change');
                 changeEl.innerText = (change>0?"+":"") + change.toFixed(2) + "%";
-                changeEl.className = `text-sm font-bold mt-2 ${change>=0?"text-green":"text-red"}`;
+                changeEl.className = `text-sm font-bold ${change>=0?"text-green":"text-red"}`;
 
-                const ma120 = prices.slice(-120).reduce((a,b)=>a+b)/120;
+                // MA200 (日线)
                 const ma200 = prices.reduce((a,b)=>a+b)/200;
-                document.getElementById('ma120').innerText = `$${Math.floor(ma120)}`;
                 document.getElementById('ma200').innerText = `$${Math.floor(ma200)}`;
 
+                // RSI
                 let gains=0, losses=0;
                 for(let i=prices.length-14; i<prices.length; i++){
                     let diff = prices[i]-prices[i-1];
                     if(diff>0) gains+=diff; else losses+=Math.abs(diff);
                 }
-                globalRSI = 100 - (100/(1+(gains/losses))); 
-                
+                globalRSI = 100 - (100/(1+(gains/losses)));
                 const rsiEl = document.getElementById('rsi');
                 rsiEl.innerText = globalRSI.toFixed(1);
                 rsiEl.className = `text-lg font-bold ${globalRSI<30?"text-green":(globalRSI>70?"text-red":"text-white")}`;
 
+                // ahr999
                 const birth = new Date("2009-01-03").getTime();
                 const now = new Date().getTime();
                 const days = (now-birth)/86400000;
@@ -221,38 +156,123 @@
                 
                 const ahrValEl = document.getElementById('ahr-val');
                 const ahrBadge = document.getElementById('ahr-badge');
-                
                 ahrValEl.innerText = ahr.toFixed(3);
                 
                 if(ahr < 0.45) {
-                    ahrValEl.className = "value-big text-green";
-                    ahrBadge.className = "badge bg-green";
-                    ahrBadge.innerText = "抄底 (Buy)";
+                    ahrValEl.className = "value-big text-green"; ahrBadge.className = "badge bg-green"; ahrBadge.innerText = "抄底 (Buy)";
                 } else if(ahr < 1.2) {
-                    ahrValEl.className = "value-big text-blue";
-                    ahrBadge.className = "badge bg-blue";
-                    ahrBadge.innerText = "定投 (DCA)";
+                    ahrValEl.className = "value-big text-blue"; ahrBadge.className = "badge bg-blue"; ahrBadge.innerText = "定投 (DCA)";
                 } else {
-                    ahrValEl.className = "value-big text-red";
-                    ahrBadge.className = "badge bg-red";
-                    ahrBadge.innerText = "观望 (Wait)";
+                    ahrValEl.className = "value-big text-red"; ahrBadge.className = "badge bg-red"; ahrBadge.innerText = "观望 (Wait)";
                 }
 
-                // 市场数据有了之后，去抓取恐惧指数
+                // 触发恐惧指数获取
                 fetchFnG();
 
             } catch(e) { console.error(e); }
         }
 
+        // === 2. 获取周线数据 (计算 WMA200) ===
+        async function fetchWeeklyData() {
+            try {
+                // 获取200周的数据
+                const res = await fetch("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=200");
+                const data = await res.json();
+                const prices = data.map(k => parseFloat(k[4]));
+                
+                if (prices.length >= 200) {
+                    const wma200 = prices.reduce((a,b)=>a+b)/200;
+                    document.getElementById('wma200').innerText = `$${Math.floor(wma200)}`;
+                }
+            } catch(e) { console.error("Weekly Data Error", e); }
+        }
+
+        // === 3. 获取资金费率 (实时) ===
+        async function fetchFunding() {
+            try {
+                // 使用 fapi (合约接口) 获取最新费率
+                const res = await fetch("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT");
+                const data = await res.json();
+                const rate = parseFloat(data.lastFundingRate) * 100; // 转百分比
+                
+                const fundEl = document.getElementById('funding-rate');
+                fundEl.innerText = `费率: ${rate.toFixed(4)}%`;
+                
+                // 费率颜色逻辑
+                if(rate > 0.05) fundEl.className = "text-sm font-bold text-red"; // 极度过热
+                else if(rate < 0) fundEl.className = "text-sm font-bold text-green"; // 费率为负(机会)
+                else fundEl.className = "text-sm font-bold text-gray-400";
+            } catch(e) { console.error("Funding Error", e); }
+        }
+
+        // === 4. 恐惧贪婪 (多线轮询 + RSI 兜底) ===
+        async function fetchFnG() {
+            const apis = [
+                { url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.alternative.me/fng/?limit=1'), name: 'L1' },
+                { url: 'https://corsproxy.io/?' + encodeURIComponent('https://api.alternative.me/fng/?limit=1'), name: 'L2' },
+                { url: 'https://thingproxy.freeboard.io/fetch/https://api.alternative.me/fng/?limit=1', name: 'L3' }
+            ];
+
+            let success = false;
+            for (let api of apis) {
+                try {
+                    let res = await fetch(api.url);
+                    if (!res.ok) throw new Error("Fail");
+                    let data = await res.json();
+                    if (data.data && data.data[0]) {
+                        updateFnGUI(parseInt(data.data[0].value), data.data[0].value_classification, "官方数据");
+                        success = true;
+                        break;
+                    }
+                } catch (e) { }
+            }
+            if (!success) {
+                // RSI 兜底逻辑
+                let estVal = Math.round(globalRSI);
+                let estStatus = estVal<30?"极度恐惧":(estVal>70?"极度贪婪":"中性");
+                updateFnGUI(estVal, estStatus, "RSI拟合");
+                document.getElementById('source-status').className = "text-yellow-600";
+            }
+        }
+
+        function updateFnGUI(val, status, src) {
+            const valEl = document.getElementById('fng-val');
+            const badgeEl = document.getElementById('fng-badge');
+            const barEl = document.getElementById('fng-bar');
+            document.getElementById('source-status').innerText = "源: " + src;
+
+            valEl.innerText = val;
+            let color="text-gray-400", bg="bg-gray-700", bar="#9ca3af";
+            
+            if (val <= 25) { color="text-green"; bg="bg-green"; bar="#4ade80"; }
+            else if (val <= 45) { color="text-blue"; bg="bg-blue"; bar="#60a5fa"; }
+            else if (val <= 75) { color="text-yellow"; bg="bg-yellow"; bar="#facc15"; }
+            else { color="text-red"; bg="bg-red"; bar="#f87171"; }
+
+            valEl.className = `value-big ${color}`;
+            badgeEl.className = `badge ${bg}`;
+            badgeEl.innerText = status;
+            barEl.style.width = val + "%";
+            barEl.style.backgroundColor = bar;
+        }
+
         function updateHalving() {
-            const target = new Date("2028-04-15").getTime();
-            const days = Math.floor((target - new Date().getTime())/86400000);
+            const days = Math.floor((new Date("2028-04-15") - new Date())/86400000);
             document.getElementById('halving').innerText = days + " 天";
         }
 
-        fetchMarket(); 
+        // 启动所有数据获取
+        fetchDailyData();
+        fetchWeeklyData();
+        fetchFunding();
         updateHalving();
-        setInterval(() => { fetchMarket(); }, 60000);
+        
+        // 轮询
+        setInterval(() => {
+            fetchDailyData();
+            fetchWeeklyData();
+            fetchFunding();
+        }, 60000);
     </script>
 </body>
 </html>
