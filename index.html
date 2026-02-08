@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>BTC 仪表盘 (永不亦错版)</title>
+    <title>BTC 仪表盘 (多线修复版)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -46,7 +46,7 @@
         <div class="flex justify-between items-end mb-8 border-b border-gray-800 pb-4">
             <div>
                 <h1 class="text-2xl md:text-3xl font-black text-white tracking-wider">BTC DASHBOARD</h1>
-                <p class="text-xs text-gray-500 mt-1">Status: <span id="source-status">Auto</span></p>
+                <p class="text-xs text-gray-500 mt-1">Status: <span id="source-status" class="text-blue-400">初始化...</span></p>
             </div>
             <div class="text-right">
                 <div id="status-dot" class="text-xs text-green-500 font-mono">● System Online</div>
@@ -58,7 +58,7 @@
             <div class="card relative overflow-hidden">
                 <div class="label">恐惧 & 贪婪指数</div>
                 <div id="fng-val" class="value-big">--</div>
-                <div id="fng-badge" class="badge bg-gray-700 text-gray-400">正在分析...</div>
+                <div id="fng-badge" class="badge bg-gray-700 text-gray-400">连接中...</div>
                 <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-700">
                     <div id="fng-bar" class="h-full transition-all duration-1000" style="width: 0%"></div>
                 </div>
@@ -68,7 +68,7 @@
                 <div class="absolute top-3 right-3 text-xs text-gray-600 font-mono">囤币指标</div>
                 <div class="label">ahr999 Index</div>
                 <div id="ahr-val" class="value-big">--</div>
-                <div id="ahr-badge" class="badge bg-gray-700 text-gray-400">正在计算...</div>
+                <div id="ahr-badge" class="badge bg-gray-700 text-gray-400">计算中...</div>
             </div>
 
             <div class="card">
@@ -98,15 +98,91 @@
         </div>
 
         <div class="text-center mt-10 text-gray-600 text-xs">
-            数据源: Binance 直连 + 智能容错系统
+            数据源: Binance 直连 + 多线路聚合API
         </div>
     </div>
 
     <script>
-        // 全局变量存储 RSI，用于救场
         let globalRSI = 50; 
 
-        // === 1. 核心市场数据 (Binance) ===
+        // === 1. 强力获取恐惧贪婪指数 (3条线路轮询) ===
+        async function fetchFnG() {
+            const statusEl = document.getElementById('source-status');
+            
+            // 定义3条不同的线路（包含直连和不同的代理）
+            const apis = [
+                // 线路1: AllOrigins 代理
+                { url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.alternative.me/fng/?limit=1'), name: '线路A' },
+                // 线路2: CorsProxy 代理
+                { url: 'https://corsproxy.io/?' + encodeURIComponent('https://api.alternative.me/fng/?limit=1'), name: '线路B' },
+                // 线路3: ThingProxy 代理
+                { url: 'https://thingproxy.freeboard.io/fetch/https://api.alternative.me/fng/?limit=1', name: '线路C' }
+            ];
+
+            let success = false;
+
+            for (let api of apis) {
+                try {
+                    console.log("尝试连接: " + api.name);
+                    let res = await fetch(api.url);
+                    if (!res.ok) throw new Error("Load Failed");
+                    let data = await res.json();
+                    
+                    // 验证数据格式是否正确
+                    if (data.data && data.data[0]) {
+                        const val = parseInt(data.data[0].value);
+                        const status = data.data[0].value_classification;
+                        updateFnGUI(val, status, "官方数据 (" + api.name + ")");
+                        success = true;
+                        break; // 成功了就跳出循环
+                    }
+                } catch (e) {
+                    console.warn(api.name + " 失败，切换下一条...");
+                }
+            }
+
+            // 如果3条线路全挂了，才用 RSI 兜底，并明确标注误差
+            if (!success) {
+                let estVal = Math.round(globalRSI);
+                let estStatus = "估算(API不通)";
+                updateFnGUI(estVal, estStatus, "警告:网络全部中断,显示RSI估值");
+                document.getElementById('source-status').className = "text-red-500";
+            } else {
+                document.getElementById('source-status').className = "text-green-500";
+            }
+        }
+
+        function updateFnGUI(val, status, source) {
+            const valEl = document.getElementById('fng-val');
+            const badgeEl = document.getElementById('fng-badge');
+            const barEl = document.getElementById('fng-bar');
+
+            valEl.innerText = val;
+            document.getElementById('source-status').innerText = source;
+            
+            let color = "text-gray-400";
+            let bg = "bg-gray-700";
+            let barColor = "#9ca3af";
+
+            // 0-25 极度恐惧 (绿色抄底)
+            if (val <= 25) { 
+                color = "text-green"; bg = "bg-green"; barColor = "#4ade80";
+            } else if (val <= 45) { // 恐惧
+                color = "text-blue"; bg = "bg-blue"; barColor = "#60a5fa";
+            } else if (val <= 75) { // 贪婪
+                color = "text-yellow"; bg = "bg-yellow"; barColor = "#facc15";
+            } else { // 极度贪婪
+                color = "text-red"; bg = "bg-red"; barColor = "#f87171";
+            }
+
+            valEl.className = `value-big ${color}`;
+            badgeEl.className = `badge ${bg}`;
+            badgeEl.innerText = status;
+            barEl.style.width = val + "%";
+            barEl.style.backgroundColor = barColor;
+        }
+
+        // === 2. 市场数据 (Binance) ===
         async function fetchMarket() {
             try {
                 const res = await fetch("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=200");
@@ -115,33 +191,28 @@
                 const current = prices[prices.length - 1];
                 const open = parseFloat(data[data.length - 1][1]);
 
-                // 价格更新
                 document.getElementById('btc-price').innerText = `$${Math.floor(current).toLocaleString()}`;
                 const change = ((current - open) / open) * 100;
                 const changeEl = document.getElementById('price-change');
                 changeEl.innerText = (change>0?"+":"") + change.toFixed(2) + "%";
                 changeEl.className = `text-sm font-bold mt-2 ${change>=0?"text-green":"text-red"}`;
 
-                // MA 计算
                 const ma120 = prices.slice(-120).reduce((a,b)=>a+b)/120;
                 const ma200 = prices.reduce((a,b)=>a+b)/200;
                 document.getElementById('ma120').innerText = `$${Math.floor(ma120)}`;
                 document.getElementById('ma200').innerText = `$${Math.floor(ma200)}`;
 
-                // RSI 计算
                 let gains=0, losses=0;
                 for(let i=prices.length-14; i<prices.length; i++){
                     let diff = prices[i]-prices[i-1];
                     if(diff>0) gains+=diff; else losses+=Math.abs(diff);
                 }
-                let rs = (gains/14) / (losses/14);
-                globalRSI = 100 - (100/(1+(gains/losses))); // 更新全局RSI
+                globalRSI = 100 - (100/(1+(gains/losses))); 
                 
                 const rsiEl = document.getElementById('rsi');
                 rsiEl.innerText = globalRSI.toFixed(1);
                 rsiEl.className = `text-lg font-bold ${globalRSI<30?"text-green":(globalRSI>70?"text-red":"text-white")}`;
 
-                // ahr999 计算
                 const birth = new Date("2009-01-03").getTime();
                 const now = new Date().getTime();
                 const days = (now-birth)/86400000;
@@ -167,77 +238,19 @@
                     ahrBadge.innerText = "观望 (Wait)";
                 }
 
-                // 数据加载完后，尝试更新恐慌指数
+                // 市场数据有了之后，去抓取恐惧指数
                 fetchFnG();
 
             } catch(e) { console.error(e); }
         }
 
-        // === 2. 恐惧贪婪 (带 RSI 替补机制) ===
-        async function fetchFnG() {
-            try {
-                // 尝试更强的代理 corsproxy.io
-                let res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.alternative.me/fng/?limit=1'));
-                if (!res.ok) throw new Error("API Blocked");
-                
-                const data = await res.json();
-                const val = parseInt(data.data[0].value);
-                const status = data.data[0].value_classification;
-                updateFnGUI(val, status, "官方API");
-
-            } catch (e) {
-                console.warn("API连接失败，启用 RSI 智能拟合...");
-                // ！！！救场逻辑！！！
-                // 如果API挂了，直接用 RSI 近似替代
-                // RSI < 30 = 恐惧，RSI > 70 = 贪婪
-                let estVal = Math.round(globalRSI); 
-                let estStatus = "中性";
-                if(estVal < 30) estStatus = "极度恐惧";
-                else if(estVal < 45) estStatus = "恐惧";
-                else if(estVal > 70) estStatus = "贪婪";
-                
-                updateFnGUI(estVal, estStatus, "基于RSI拟合");
-            }
-        }
-
-        function updateFnGUI(val, status, source) {
-            const valEl = document.getElementById('fng-val');
-            const badgeEl = document.getElementById('fng-badge');
-            const barEl = document.getElementById('fng-bar');
-
-            valEl.innerText = val;
-            document.getElementById('source-status').innerText = source;
-            
-            let color = "text-gray-400";
-            let bg = "bg-gray-700";
-            let barColor = "#9ca3af";
-
-            if (val <= 30) { // 极度恐惧
-                color = "text-green"; bg = "bg-green"; barColor = "#4ade80";
-            } else if (val <= 49) { // 恐惧
-                color = "text-blue"; bg = "bg-blue"; barColor = "#60a5fa";
-            } else if (val <= 70) { // 贪婪
-                color = "text-yellow"; bg = "bg-yellow"; barColor = "#facc15";
-            } else { // 极度贪婪
-                color = "text-red"; bg = "bg-red"; barColor = "#f87171";
-            }
-
-            valEl.className = `value-big ${color}`;
-            badgeEl.className = `badge ${bg}`;
-            badgeEl.innerText = status;
-            barEl.style.width = val + "%";
-            barEl.style.backgroundColor = barColor;
-        }
-
-        // === 3. 减半倒计时 ===
         function updateHalving() {
             const target = new Date("2028-04-15").getTime();
             const days = Math.floor((target - new Date().getTime())/86400000);
             document.getElementById('halving').innerText = days + " 天";
         }
 
-        // 启动
-        fetchMarket(); // 先获取市场数据(包含RSI)
+        fetchMarket(); 
         updateHalving();
         setInterval(() => { fetchMarket(); }, 60000);
     </script>
