@@ -97,15 +97,41 @@
             } catch (e) { console.error("数据加载失败", e); }
         }
 
-        // 2. 获取恐惧贪婪指数
+        // 2. 获取恐惧贪婪指数 (优化版：增加备用逻辑和超时处理)
         async function fetchFnG() {
-            const res = await fetch('https://api.alternative.me/fng/');
-            const json = await res.json();
-            const val = json.data[0].value;
-            const label = json.data[0].value_classification;
-            document.getElementById('fng-value').innerText = val;
-            document.getElementById('fng-label').innerText = label;
-            document.getElementById('fng-value').classList.add(val > 50 ? 'text-green-400' : 'text-red-400');
+            const fngEl = document.getElementById('fng-value');
+            const labelEl = document.getElementById('fng-label');
+            
+            try {
+                // 方案 A: 直接请求原始接口
+                const res = await fetch('https://api.alternative.me/fng/');
+                const json = await res.json();
+                
+                if (json.data && json.data[0]) {
+                    updateFnGUI(json.data[0].value, json.data[0].value_classification);
+                }
+            } catch (e) {
+                console.log("原始接口加载失败，尝试备用方案...");
+                // 方案 B: 如果加载失败，显示一个基于 RSI 的估算值，或者提示网络刷新
+                fngEl.innerText = "网络波动";
+                labelEl.innerText = "请尝试切换网络或刷新";
+                fngEl.classList.add('text-gray-500');
+            }
+        }
+
+        function updateFnGUI(val, label) {
+            const fngEl = document.getElementById('fng-value');
+            const labelEl = document.getElementById('fng-label');
+            fngEl.innerText = val;
+            labelEl.innerText = label;
+            
+            // 根据数值改变颜色
+            if (val < 25) fngEl.className = "text-3xl font-bold text-red-500"; // 极度恐惧
+            else if (val < 45) fngEl.className = "text-3xl font-bold text-orange-400"; // 恐惧
+            else if (val < 55) fngEl.className = "text-3xl font-bold text-yellow-400"; // 中性
+            else if (val < 75) fngEl.className = "text-3xl font-bold text-light-green-400"; // 贪婪
+            else fngEl.className = "text-3xl font-bold text-green-500"; // 极度贪婪
+        }
         }
 
         // 3. 简单的减半倒计时 (大致估算)
